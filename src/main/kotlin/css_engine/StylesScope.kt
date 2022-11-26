@@ -7,48 +7,22 @@ class StylesScope internal constructor(
   // Holds the final styles
   private val outputStyles: MutableMap<Set<ElementState>, Styles> = mutableMapOf(),
 ) {
+  private val derivedSelectors = ElementState.possibleCombinations.filter {
+    it.containsAll(currentSelector.toSet())
+  }
+
+  // For the getter, should we do this?
+  // field ?: outputStyles[currentSelector.toSet()]?.backgroundColor?.value
   var backgroundColor: String? = null
-    get() = field ?: outputStyles[currentSelector.toSet()]?.backgroundColor?.value
-    set(value) = getDerivedSelectors().forEach { selector ->
+    set(value) {
       field = value
-      val stylesInStore = outputStyles[selector]
-      val previousUpdateSelector = stylesInStore?.backgroundColor?.cssSelector
-
-      // Current selector is less specific than the selector that updated this style, previously.
-      // So, ignore this update
-      if (currentSelector.hasLowerSpecificityThan(previousUpdateSelector)) {
-        return@forEach
-      }
-
-      // Override the existing styles in the store, if they exist, else, just set it to newStyles
-      overrideStyles(
-        selector = selector,
-        newStyles = Styles(
-          backgroundColor = StyleWithSelector(value, cssSelector = currentSelector),
-        ),
-      );
+      updateStyles(Styles(backgroundColor = withThisSelector(value))) { backgroundColor }
     }
 
   var contentColor: String? = null
-    get() = field ?: outputStyles[currentSelector.toSet()]?.contentColor?.value
-    set(value) = getDerivedSelectors().forEach { selector ->
+    set(value) {
       field = value
-      val stylesInStore = outputStyles[selector]
-      val previousUpdateSelector = stylesInStore?.contentColor?.cssSelector
-
-      // Current selector is less specific than the selector that updated this style, previously.
-      // So, ignore this update
-      if (currentSelector.hasLowerSpecificityThan(previousUpdateSelector)) {
-        return@forEach
-      }
-
-      // Override the existing styles in the store, if they exist, else, just set it to newStyles
-      overrideStyles(
-        selector = selector,
-        newStyles = Styles(
-          contentColor = StyleWithSelector(value, cssSelector = currentSelector),
-        ),
-      );
+      updateStyles(Styles(contentColor = withThisSelector(value))) { contentColor }
     }
 
   /**
@@ -74,29 +48,63 @@ class StylesScope internal constructor(
   /**
    * Derives newSelector from currentSelector and creates a new scope for the child styles
    */
-  private fun newScope(elementState: ElementState, styles: StylesScope.() -> Unit) {
-    val newSelector = currentSelector.cloneAnd { add(elementState) }
-    val scope = StylesScope(currentSelector = newSelector, outputStyles = outputStyles)
-    scope.apply(styles)
+  private fun newScope(newElementState: ElementState, styles: StylesScope.() -> Unit) {
+    val newSelector = currentSelector.cloneAnd { add(newElementState) }
+    StylesScope(currentSelector = newSelector, outputStyles = outputStyles)
+      .apply(styles)
   }
 
   /**
-   * Returns selectors which inherit the currentSelector
+   * Updates the styles in all derived selectors, if currentSelector is more "specific"
    */
-  private fun getDerivedSelectors(): List<Set<ElementState>> =
-    ElementState.possibleCombinations.filter {
-      it.containsAll(currentSelector.toSet())
+  private fun <T> updateStyles(
+    newStyles: Styles,
+    previousStyleWithSelector: Styles.() -> StyleWithSelector<T>?,
+  ) {
+    derivedSelectors.forEach { childSelector ->
+      if (
+        canOverrideStyle(
+          previousSelector = childSelector,
+          previousStyleWithSelector = previousStyleWithSelector,
+        )
+      ) {
+        overrideStylesFor(
+          selector = childSelector,
+          newStyles = newStyles,
+        );
+      }
     }
+  }
+
+  /**
+   * Checks if new selector can override the old selector for a Style
+   */
+  private fun <T> canOverrideStyle(
+    previousSelector: Set<ElementState>,
+    previousStyleWithSelector: (Styles).() -> StyleWithSelector<T>?,
+  ): Boolean {
+    val stylesInStore = outputStyles[previousSelector]
+    val previousCssSelector = (stylesInStore ?: Styles())
+      .let(previousStyleWithSelector)?.cssSelector
+
+    return currentSelector.hasHigherOrEqualSpecificityThan(previousCssSelector)
+  }
 
   /**
    * Overrides the styles for the given selector in output styles
    */
-  private fun overrideStyles(selector: Set<ElementState>, newStyles: Styles) {
+  private fun overrideStylesFor(selector: Set<ElementState>, newStyles: Styles) {
     val existingStyles = outputStyles[selector]
-    if (existingStyles != null) {
-      outputStyles[selector] = existingStyles.overriddenWith(newStyles)
-    } else {
+    if (existingStyles == null) {
       outputStyles[selector] = newStyles
+    } else {
+      outputStyles[selector] = existingStyles.overriddenWith(newStyles)
     }
   }
+
+  /**
+   * Wraps the value with currentSelector
+   */
+  private fun <T> withThisSelector(value: T): StyleWithSelector<T> =
+    StyleWithSelector(value = value, cssSelector = currentSelector)
 }

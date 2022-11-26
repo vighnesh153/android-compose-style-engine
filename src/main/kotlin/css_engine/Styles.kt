@@ -29,7 +29,8 @@ class Styles(
   internal var contentColor: StyleWithSelector<String?>? = null,
 ) {
   fun overriddenWith(overrideStyles: Styles): Styles = Styles(
-    backgroundColor = overrideStyles.backgroundColor ?: backgroundColor,
+    backgroundColor =
+    overrideStyles.backgroundColor ?: backgroundColor,
     contentColor = overrideStyles.contentColor ?: contentColor,
   )
 
