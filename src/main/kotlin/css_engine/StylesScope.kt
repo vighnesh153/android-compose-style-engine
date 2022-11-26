@@ -5,12 +5,8 @@ class StylesScope internal constructor(
   private val currentSelector: CssSelector = emptyList(),
 
   // Holds the final styles
-  private val outputStyles: MutableMap<Set<ElementState>, Styles> = mutableMapOf(),
+  private val outputStyles: MutableMap<CssSelectorAsSet, Styles> = mutableMapOf(),
 ) {
-  private val derivedSelectors = ElementState.possibleCombinations.filter {
-    it.containsAll(currentSelector.toSet())
-  }
-
   // For the getter, should we do this?
   // field ?: outputStyles[currentSelector.toSet()]?.backgroundColor?.value
   var backgroundColor: String? = null
@@ -61,7 +57,9 @@ class StylesScope internal constructor(
     newStyles: Styles,
     previousStyleWithSelector: Styles.() -> StyleWithSelector<T>?,
   ) {
-    derivedSelectors.forEach { childSelector ->
+    ElementState
+      .getDerivedSelectors(currentSelector.toSet())
+      .forEach { childSelector ->
       if (
         canOverrideStyle(
           previousSelector = childSelector,
@@ -80,7 +78,7 @@ class StylesScope internal constructor(
    * Checks if new selector can override the old selector for a Style
    */
   private fun <T> canOverrideStyle(
-    previousSelector: Set<ElementState>,
+    previousSelector: CssSelectorAsSet,
     previousStyleWithSelector: (Styles).() -> StyleWithSelector<T>?,
   ): Boolean {
     val stylesInStore = outputStyles[previousSelector]
@@ -93,7 +91,7 @@ class StylesScope internal constructor(
   /**
    * Overrides the styles for the given selector in output styles
    */
-  private fun overrideStylesFor(selector: Set<ElementState>, newStyles: Styles) {
+  private fun overrideStylesFor(selector: CssSelectorAsSet, newStyles: Styles) {
     val existingStyles = outputStyles[selector]
     if (existingStyles == null) {
       outputStyles[selector] = newStyles

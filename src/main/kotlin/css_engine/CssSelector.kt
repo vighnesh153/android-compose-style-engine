@@ -4,6 +4,7 @@ package vighnesh.css_engine
  * Css-like selector which holds the different states in the path to root
  */
 internal typealias CssSelector = List<ElementState>
+internal typealias CssSelectorAsSet = Set<ElementState>
 
 /**
  * Clones the selector and provides modifications
