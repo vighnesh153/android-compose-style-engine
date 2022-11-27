@@ -1,7 +1,7 @@
 package vighnesh.css_engine
 
 class StylesScope internal constructor(
-  // This is a list because it will help with finding "Specificity"
+  // This is a list because it will help with calculating "Specificity"
   private val currentSelector: CssSelector = emptyList(),
 
   // Holds the final styles
@@ -12,13 +12,13 @@ class StylesScope internal constructor(
   var backgroundColor: String? = null
     set(value) {
       field = value
-      updateStyles(Styles(backgroundColor = withThisSelector(value))) { backgroundColor }
+      updateStyles(Styles(backgroundColor = withCurrentSelector(value))) { backgroundColor }
     }
 
   var contentColor: String? = null
     set(value) {
       field = value
-      updateStyles(Styles(contentColor = withThisSelector(value))) { contentColor }
+      updateStyles(Styles(contentColor = withCurrentSelector(value))) { contentColor }
     }
 
   /**
@@ -60,24 +60,24 @@ class StylesScope internal constructor(
     ElementState
       .getDerivedSelectors(currentSelector.toSet())
       .forEach { childSelector ->
-      if (
-        canOverrideStyle(
-          previousSelector = childSelector,
-          previousStyleWithSelector = previousStyleWithSelector,
-        )
-      ) {
-        overrideStylesFor(
-          selector = childSelector,
-          newStyles = newStyles,
-        );
+        if (
+          canCurrentSelectorOverride(
+            previousSelector = childSelector,
+            previousStyleWithSelector = previousStyleWithSelector
+          )
+        ) {
+          overrideStylesFor(
+            selector = childSelector,
+            newStyles = newStyles,
+          );
+        }
       }
-    }
   }
 
   /**
-   * Checks if new selector can override the old selector for a Style
+   * Checks if currentSelector can override the oldSelector for a Style
    */
-  private fun <T> canOverrideStyle(
+  private fun <T> canCurrentSelectorOverride(
     previousSelector: CssSelectorAsSet,
     previousStyleWithSelector: (Styles).() -> StyleWithSelector<T>?,
   ): Boolean {
@@ -103,6 +103,6 @@ class StylesScope internal constructor(
   /**
    * Wraps the value with currentSelector
    */
-  private fun <T> withThisSelector(value: T): StyleWithSelector<T> =
+  private fun <T> withCurrentSelector(value: T): StyleWithSelector<T> =
     StyleWithSelector(value = value, cssSelector = currentSelector)
 }
