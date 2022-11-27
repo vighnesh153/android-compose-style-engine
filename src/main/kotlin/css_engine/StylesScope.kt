@@ -7,15 +7,15 @@ class StylesScope internal constructor(
   // Holds the final styles
   private val outputStyles: MutableMap<CssSelectorAsSet, Styles> = mutableMapOf(),
 ) {
-  // For the getter, should we do this?
-  // field ?: outputStyles[currentSelector.toSet()]?.backgroundColor?.value
   var backgroundColor: String? = null
+    get() = field ?: getPresetStyle { backgroundColor }
     set(value) {
       field = value
       updateStyles(Styles(backgroundColor = withCurrentSelector(value))) { backgroundColor }
     }
 
   var contentColor: String? = null
+    get() = field ?: getPresetStyle { contentColor }
     set(value) {
       field = value
       updateStyles(Styles(contentColor = withCurrentSelector(value))) { contentColor }
@@ -98,6 +98,14 @@ class StylesScope internal constructor(
     } else {
       outputStyles[selector] = existingStyles.overriddenWith(newStyles)
     }
+  }
+
+  /**
+   * Returns the Style's value for the styleWithSelector, from the store
+   */
+  private fun <T>getPresetStyle(styleWithSelector: (Styles).() -> StyleWithSelector<T>?): T? {
+    val storeStyles = outputStyles[currentSelector.toSet()]
+    return storeStyles?.let(styleWithSelector)?.value
   }
 
   /**
