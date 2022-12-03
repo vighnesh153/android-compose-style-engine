@@ -1,8 +1,7 @@
 package vighnesh
 
-import vighnesh.css_engine.ElementState
-import vighnesh.css_engine.StylesScope
-import vighnesh.css_engine.buildOutputStyles
+import style_engine.ContainedButtonStyles
+import style_engine.ElementState
 
 const val ANSI_RESET = "\u001B[0m"
 const val ANSI_BLACK = "\u001B[30m"
@@ -16,40 +15,37 @@ const val ANSI_WHITE = "\u001B[37m"
 
 data class TestCase(
   val identifier: String,
-  val styles: StylesScope.() -> Unit,
+  val styles: ContainedButtonStyles,
   val output: Map<String, String>,
 )
 
-fun main() {
+@Composable
+fun TestRunner() {
   testcases.forEachIndexed { index, testcase ->
-    val outputStyles = buildOutputStyles()
-    val scope = StylesScope(outputStyles = outputStyles)
-    scope.apply(testcase.styles)
-
-    // println("Validating ${testCase.identifier}")
+    // println("Vighnesh Validating ${testCase.identifier}")
     var mismatchedOutputs = 0
     ElementState.possibleCombinations
       .sortedWith { x, y -> x.size.compareTo(y.size) }
       .forEach { key ->
         val expectedOutput = testcase.output[key.toString()]
-        val actualOutput = outputStyles[key]?.toPureStyle().toString()
+        val actualOutput = testcase.styles.getStyle(key).toString()
         if (expectedOutput != actualOutput) {
-          println("$ANSI_YELLOW\tFor key -> $key$ANSI_RESET")
-          println("$ANSI_GREEN\t\tExpected: \n\t\t\t+ $expectedOutput$ANSI_RESET")
-          println("$ANSI_RED\t\tReceived: \n\t\t\t- $actualOutput$ANSI_RESET")
+          println("$ANSI_YELLOW Vighnesh \tFor key -> $key$ANSI_RESET")
+          println("$ANSI_GREEN Vighnesh \t\tExpected: \n\t\t\t+ $expectedOutput$ANSI_RESET")
+          println("$ANSI_RED Vighnesh \t\tReceived: \n\t\t\t- $actualOutput$ANSI_RESET")
           mismatchedOutputs++
         }
       }
 
     if (mismatchedOutputs > 0) {
       println()
-      println("$ANSI_RED⤫ Test failed: \"${testcase.identifier}\"$ANSI_RESET\n")
+      println("$ANSI_RED Vighnesh ⤫ Test failed: \"${testcase.identifier}\"$ANSI_RESET\n")
 
       if (index != testcases.lastIndex) {
         println("-".repeat(50))
       }
     } else {
-      println("$ANSI_GREEN✓ Test passed: \"${testcase.identifier}\"$ANSI_RESET")
+      println("$ANSI_GREEN Vighnesh ✓ Test passed: \"${testcase.identifier}\"$ANSI_RESET")
     }
   }
 }
@@ -57,7 +53,7 @@ fun main() {
 val testcases = listOf(
   TestCase(
     identifier = "testcase1",
-    styles = {
+    styles = ContainedButtonStyles {
       backgroundColor = "default"
 
       onFocused {
@@ -98,7 +94,7 @@ val testcases = listOf(
   ),
   TestCase(
     identifier = "testcase2",
-    styles = {
+    styles = ContainedButtonStyles {
       backgroundColor = "default"
 
       onFocused {
@@ -136,7 +132,7 @@ val testcases = listOf(
   ),
   TestCase(
     identifier = "testcase3",
-    styles = {
+    styles = ContainedButtonStyles {
       onFocused {
         onPressed {
           backgroundColor = "F.P"
@@ -164,7 +160,7 @@ val testcases = listOf(
   ),
   TestCase(
     identifier = "testcase4",
-    styles = {
+    styles = ContainedButtonStyles {
       onFocused {
         onPressed {
           backgroundColor = "F.P"
@@ -197,7 +193,7 @@ val testcases = listOf(
   ),
   TestCase(
     identifier = "testcase5",
-    styles = {
+    styles = ContainedButtonStyles {
       onFocused {
         onPressed {
           backgroundColor = "F.P"

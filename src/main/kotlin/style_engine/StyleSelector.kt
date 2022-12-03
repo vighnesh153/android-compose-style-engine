@@ -1,15 +1,15 @@
-package vighnesh.css_engine
+package style_engine
 
 /**
  * Css-like selector which holds the different states in the path to root
  */
-internal typealias CssSelector = List<ElementState>
-internal typealias CssSelectorAsSet = Set<ElementState>
+internal typealias StyleSelector = List<ElementState>
+internal typealias StyleSelectorAsSet = Set<ElementState>
 
 /**
  * Clones the selector and provides modifications
  */
-internal fun CssSelector.cloneAnd(action: MutableList<ElementState>.() -> Unit): CssSelector {
+internal fun StyleSelector.cloneAnd(action: MutableList<ElementState>.() -> Unit): StyleSelector {
   val copy = this.toMutableList()
   copy.apply { action.invoke(this) }
   return copy
@@ -18,7 +18,7 @@ internal fun CssSelector.cloneAnd(action: MutableList<ElementState>.() -> Unit):
 /**
  * Learn more about specificity here: https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity
  */
-internal fun CssSelector.hasHigherOrEqualSpecificityThan(otherSelector: CssSelector?): Boolean {
+internal fun StyleSelector.hasHigherOrEqualSpecificityThan(otherSelector: StyleSelector?): Boolean {
   val otherSelectorList = (otherSelector ?: emptyList())
 
   val thisUniqueStateCount = this.toSet().size
