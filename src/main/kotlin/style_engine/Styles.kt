@@ -52,7 +52,7 @@ abstract class Styles<T, Scope>(
     mergeFrom: Styles<T, Scope>? = null,
     private val stylesDefinition: @Composable (Scope.() -> Unit),
 ) {
-    private var initialized = false
+    private var isFlattened = false
     private val selectorToStylesMap: MutableMap<StyleSelectorAsSet, StylesWithSelector> =
         mergeFrom?.selectorToStylesMap?.toMutableMap() ?: mutableMapOf()
 
@@ -61,8 +61,8 @@ abstract class Styles<T, Scope>(
     ): Scope
 
     @Composable
-    private fun Initialize() { // :)
-        if (initialized) return
+    private fun FlattenStyles() {
+        if (isFlattened) return
 
         ElementState.possibleCombinations.forEach {
             selectorToStylesMap[it] = selectorToStylesMap[it] ?: StylesWithSelector()
@@ -70,7 +70,7 @@ abstract class Styles<T, Scope>(
 
         createStylesInstance(outputStylesWithSelector = selectorToStylesMap)
             .stylesDefinition()
-        initialized = true
+        isFlattened = true
     }
 
     @Composable
@@ -81,7 +81,7 @@ abstract class Styles<T, Scope>(
         isSelected: Boolean,
         isDisabled: Boolean,
     ): Style {
-        Initialize()
+        FlattenStyles()
 
         val selector = buildSet {
             if (isFocused) add(ElementState.Focused)
@@ -95,7 +95,7 @@ abstract class Styles<T, Scope>(
     @Composable
     // TODO: make internal
     fun getStyle(selector: StyleSelectorAsSet): Style {
-        Initialize()
+        FlattenStyles()
 
         return selectorToStylesMap[selector]?.toStyle()!!
     }

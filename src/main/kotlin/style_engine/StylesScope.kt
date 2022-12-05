@@ -94,7 +94,7 @@ open class StylesScope internal constructor(
         StyleWithSelector(value = value, styleSelector = currentSelector)
 }
 
-abstract class StylesStates<T>(
+abstract class StylesStates<T> internal constructor(
     private val currentSelector: StyleSelector = emptyList(),
     private val outputStylesWithSelector: MutableMap<StyleSelectorAsSet, StylesWithSelector>,
 ) {
